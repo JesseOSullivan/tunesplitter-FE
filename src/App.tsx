@@ -13,8 +13,6 @@ import {
   AppBar,
   Toolbar,
   CssBaseline,
-  Card,
-  CardContent,
   Skeleton,
   Grid,
   useMediaQuery,
@@ -25,6 +23,7 @@ import AudiotrackIcon from '@mui/icons-material/Audiotrack';
 import { useSpring, useTransition, animated } from '@react-spring/web';
 import './App.css'; // Import the CSS file
 import mascot from '../mascot.png'; // Import the image
+
 const App = () => {
   interface Snippet {
     title: string;
@@ -37,6 +36,7 @@ const App = () => {
   const [isValidUrl, setIsValidUrl] = useState(false);
   const [hasFetched, setHasFetched] = useState(false);
   const [loadingSnippets, setLoadingSnippets] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
@@ -71,6 +71,7 @@ const App = () => {
   };
 
   const downloadAll = async () => {
+    setDownloading(true);
     try {
       const response = await axios.get(`http://localhost:3001/download-all`, {
         params: { url: videoUrl },
@@ -86,6 +87,7 @@ const App = () => {
     } catch (error) {
       console.error('Error downloading all snippets:', error);
     }
+    setDownloading(false);
   };
 
   const extractVideoId = (url: string) => {
@@ -131,11 +133,11 @@ const App = () => {
   return (
     <div>
       <CssBaseline />
-      <AppBar position="static">
-        <Toolbar>
+      <AppBar position="static" sx={{ height: 80 }}>
+        <Toolbar sx={{ minHeight: 80 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <img src={mascot} alt="Mascot" style={{ width: '50px', height: '50px', marginRight: '10px' }} />
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            <img src={mascot} alt="Mascot" style={{ width: '70px', height: '70px', marginRight: '20px', marginTop:7 }} />
+            <Typography variant="h4" component="div" sx={{ flexGrow: 1 }}>
               TuneSplitter
             </Typography>
           </Box>
@@ -144,27 +146,24 @@ const App = () => {
 
       {!isValidUrl && (
         <Grow in={true} timeout={1000}>
-        <Box sx={{ textAlign: 'center', mt: 4, px: 2 }}>
-          <Typography variant="h6" component="div" gutterBottom>
-            Welcome to TuneSplitter!
-          </Typography>
-          <Typography variant="body1" component="div">
-            Enter a YouTube video URL to generate and download MP3 snippets from the video. Simply paste the URL
-            into the input box below and click "Generate and Fetch Snippets".
-          </Typography>
-        </Box>
+          <Box sx={{ textAlign: 'center', mt: 4, px: 2 }}>
+            <Typography variant="h6" component="div" gutterBottom>
+              Welcome to TuneSplitter!
+            </Typography>
+            <Typography variant="body1" component="div">
+              Enter a YouTube video URL to generate and download MP3 snippets from the video. Simply paste the URL
+              into the input box below and click "Generate and Fetch Snippets".
+            </Typography>
+          </Box>
         </Grow>
       )}
-
 
       <Box
         className="side-by-side-content"
         sx={{
           padding: isSmallScreen ? 2 : 2,
           display: 'flex',
-          flexDirection: isSmallScreen ? 'column' : 'row',
-          alignItems: isSmallScreen ? 'center' : 'flex-start',
-          justifyContent: 'center',
+          flexWrap: 'wrap', // Add this line to allow wrapping
         }}
       >
         <animated.div style={{ ...textFieldProps, ...widthProps }}>
@@ -220,20 +219,21 @@ const App = () => {
                         variant="contained"
                         color="secondary"
                         onClick={downloadAll}
-                        disabled={snippets.length === 0}
+                        disabled={snippets.length === 0 || downloading}
                         sx={{
-                          backgroundColor: snippets.length === 0 ? theme.palette.action.disabledBackground : theme.palette.secondary.main,
+                          backgroundColor: snippets.length === 0 || downloading ? theme.palette.action.disabledBackground : theme.palette.secondary.main,
                           '&:hover': {
-                            backgroundColor: snippets.length === 0 ? theme.palette.action.disabledBackground : theme.palette.secondary.dark,
+                            backgroundColor: snippets.length === 0 || downloading ? theme.palette.action.disabledBackground : theme.palette.secondary.dark,
                           },
                           borderRadius: '20px',
                           boxShadow: '0 3px 5px 2px rgba(255, 105, 135, .3)',
                           padding: '10px 20px',
                           fontWeight: 'bold',
                           textTransform: 'none',
+                          minWidth: '200px',
                         }}
                       >
-                        Download All
+                        {downloading ? <CircularProgress size={24} /> : 'Download All'}
                       </Button>
                     )}
                   </Box>
@@ -243,39 +243,55 @@ const App = () => {
           </Box>
         </animated.div>
         {iframeUrl && (
-          <Card sx={{ mt: isSmallScreen ? 2 : 0, flex: 1, width: isSmallScreen ? '100%' : 'auto' }}>
-            <CardContent>
+          <Box
+            sx={{
+              flex: 1,
+              width: '100%', // Ensures the iframe container takes full width
+              display: 'flex', // Use flexbox for better alignment
+              justifyContent: 'center', // Centers the iframe horizontally
+              mt: isSmallScreen ? 2 : 0,
+            }}
+          >
+            <Box
+              sx={{
+                width: '100%', // Ensures the iframe takes full width of its container
+                maxWidth: '600px', // Limits the max width for better view on large screens
+                flex: 1,
+              }}
+            >
               <iframe
                 width="100%"
-                height="415"
+                height="315"
                 src={iframeUrl}
-                frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
                 title="YouTube video"
               />
-            </CardContent>
-          </Card>
+            </Box>
+          </Box>
         )}
       </Box>
 
-      <Box sx={{ mt: 4, width: '100%', paddingLeft: 2, paddingRight: 2, bgcolor:'white', pb:5 }}>
-        <Grid container spacing={2} >
-          { 
-            snippets.length > 0 && (
-              <Grid item xs={12} >
-                <Typography variant="h6" component="div" gutterBottom>
-                  Snippets
-                </Typography>
-              </Grid>
-            )
-          }
-
+      <Box sx={{ mt: 4,
+                    // centere the two columns
+                    display: 'flex',    
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+        width: '100%', paddingLeft: 2, paddingRight: 2, bgcolor: 'white', pb: 5 }}>
+        <Grid container spacing={2} 
+        >
+          {snippets.length > 0 && (
+            <Grid item xs={12}>
+              <Typography variant="h6" component="div" gutterBottom>
+                MP3 Snippets
+              </Typography>
+            </Grid>
+          )}
 
           {loadingSnippets ? (
-            
             [1, 2, 3, 4, 5, 6, 7, 8].map((_, index) => (
-              <Grid item xs={12} sm={6} key={index} >
+              <Grid item xs={12} sm={6} key={index}>
                 <ListItem>
                   <ListItemIcon>
                     <AudiotrackIcon />
