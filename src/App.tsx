@@ -12,9 +12,14 @@ import {
   Box,
   AppBar,
   Toolbar,
-  CssBaseline
+  CssBaseline,
+  Card,
+  CardContent,
+  Grid
 } from '@mui/material';
 import AudiotrackIcon from '@mui/icons-material/Audiotrack';
+import { CSSTransition } from 'react-transition-group';
+import './App.css'; // Import the CSS file
 
 const App = () => {
   interface Snippet {
@@ -25,6 +30,7 @@ const App = () => {
   const [videoUrl, setVideoUrl] = useState('');
   const [processing, setProcessing] = useState(false);
   const [snippets, setSnippets] = useState<Snippet[]>([]);
+  const [isValidUrl, setIsValidUrl] = useState(false);
 
   const processVideo = async () => {
     setProcessing(true);
@@ -82,6 +88,26 @@ const App = () => {
     }
   };
 
+  const extractVideoId = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      return urlObj.searchParams.get('v');
+    } catch (error) {
+      console.error('Invalid URL:', error);
+      return null;
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setVideoUrl(url);
+    const videoId = extractVideoId(url);
+    setIsValidUrl(!!videoId);
+  };
+
+  const videoId = extractVideoId(videoUrl);
+  const iframeUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
+
   return (
     <div>
       <CssBaseline />
@@ -98,12 +124,15 @@ const App = () => {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          width: '100%',
           maxWidth: 'md',
           marginLeft: 'auto',
           marginRight: 'auto',
           paddingLeft: 2,
-          paddingRight: 2
+          paddingRight: 2,
+          transition: 'all 0.5s ease-in-out',
+          transform: isValidUrl ? 'translateX(-20%)' : 'translateX(0)',
+          // change size and suff based on isValidUrl
+          width: isValidUrl ? '40%' : '100%',
         }}
       >
         <TextField
@@ -111,20 +140,54 @@ const App = () => {
           label="Enter YouTube video URL"
           variant="outlined"
           value={videoUrl}
-          onChange={(e) => setVideoUrl(e.target.value)}
+          onChange={handleInputChange}
           sx={{ mb: 2 }}
         />
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Button variant="contained" color="primary" onClick={processVideo} disabled={processing}>
+          <Button variant="contained" color="primary" onClick={processVideo} disabled={processing || !isValidUrl}>
             {processing ? <CircularProgress size={24} /> : 'Generate Snippets'}
           </Button>
-          <Button variant="contained" color="secondary" onClick={fetchSnippets} disabled={processing}>
+          <Button variant="contained" color="secondary" onClick={fetchSnippets} disabled={processing || !isValidUrl}>
             {processing ? <CircularProgress size={24} /> : 'Fetch Snippets'}
           </Button>
           <Button variant="contained" onClick={downloadAll} disabled={snippets.length === 0}>
             Download All
           </Button>
         </Box>
+      </Box>
+      <Box
+        sx={{
+          mt: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '100%',
+          maxWidth: 'md',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          paddingLeft: 2,
+          paddingRight: 2,
+          transition: 'all 0.5s ease-in-out',
+          opacity: isValidUrl ? 1 : 0,
+          maxHeight: isValidUrl ? '1000px' : '0',
+          overflow: 'hidden',
+        }}
+      >
+        {iframeUrl && (
+          <Card sx={{ mb: 2, width: '100%' }}>
+            <CardContent>
+              <iframe
+                width="100%"
+                height="315"
+                src={iframeUrl}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title="YouTube video"
+              />
+            </CardContent>
+          </Card>
+        )}
       </Box>
       {snippets.length > 0 && (
         <Box sx={{ mt: 4, width: '100%', paddingLeft: 2, paddingRight: 2 }}>
