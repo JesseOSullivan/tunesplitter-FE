@@ -15,7 +15,8 @@ interface Snippet {
   const processVideo = async () => {
     setProcessing(true);
     try {
-      await axios.get(`http://3.106.230.195:3001/process-video`, {
+        await axios.get(`http://localhost:3001/process-video`, {
+      //await axios.get(`http://3.106.230.195:3001/process-video`, {
         params: { url: videoUrl },
         headers: { 'Content-Type': 'application/json' }
       });
@@ -30,7 +31,8 @@ interface Snippet {
 
   const fetchSnippets = async () => {
     try {
-      const response = await axios.get(`http://3.106.230.195:3001/get-snippets`, {
+            const response = await axios.get(`http://localhost:3001/get-snippets`, {
+      //const response = await axios.get(`http://3.106.230.195:3001/get-snippets`, {
         params: { url: videoUrl },
         headers: { 'Content-Type': 'application/json' }
       });
