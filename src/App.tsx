@@ -30,40 +30,33 @@ const App = () => {
   const [processing, setProcessing] = useState(false);
   const [snippets, setSnippets] = useState<Snippet[]>([]);
   const [isValidUrl, setIsValidUrl] = useState(false);
+  const [hasFetched, setHasFetched] = useState(false);
 
-  const processVideo = async () => {
+  const processAndFetchSnippets = async () => {
+    if (hasFetched) {
+      alert('Snippets have already been fetched.');
+      return;
+    }
+
     setProcessing(true);
     try {
       await axios.get(`http://localhost:3001/process-video`, {
         params: { url: videoUrl },
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
-      setProcessing(false);
-      alert('Video processing started. Fetch snippets after some time.');
-    } catch (error) {
-      setProcessing(false);
-      console.error('Error processing video:', error);
-      alert('Error processing video. Please check the console for details.');
-    }
-  };
 
-  const fetchSnippets = async () => {
-    try {
       const response = await axios.get(`http://localhost:3001/get-snippets`, {
         params: { url: videoUrl },
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
       setSnippets(response.data.snippets);
-    } catch (error: any) {
-      console.error('Error fetching snippets:', error);
-      if (error.response) {
-        console.error('Error response:', error.response);
-      } else if (error.request) {
-        console.error('Error request:', error.request);
-      } else {
-        console.error('Error message:', error.message);
-      }
-      alert('Error fetching snippets. Please check the console for details.');
+      setHasFetched(true);
+      setProcessing(false);
+      alert('Snippets have been fetched successfully.');
+    } catch (error) {
+      setProcessing(false);
+      console.error('Error processing and fetching snippets:', error);
+      alert('Error processing and fetching snippets. Please check the console for details.');
     }
   };
 
@@ -101,6 +94,8 @@ const App = () => {
     setVideoUrl(url);
     const videoId = extractVideoId(url);
     setIsValidUrl(!!videoId);
+    setHasFetched(false);
+    setSnippets([]);
   };
 
   const videoId = extractVideoId(videoUrl);
@@ -109,19 +104,19 @@ const App = () => {
   const textFieldProps = useSpring({
     width: isValidUrl ? '40%' : '100%',
     transform: isValidUrl ? 'translateX(-20%)' : 'translateX(0%)',
-    config: { duration: 1000 }, // Adjust the duration to make the animation slower
+    config: { duration: 1000 },
   });
 
   const widthProps = useSpring({
     width: isValidUrl ? '40%' : '100%',
-    config: { duration: 1500 }, // Adjust the duration to make the width change slower
+    config: { duration: 1000 },
   });
 
   const buttonTransitions = useTransition(isValidUrl, {
     from: { opacity: 0, transform: 'translateY(20px)' },
     enter: { opacity: 1, transform: 'translateY(0px)' },
     leave: { opacity: 0, transform: 'translateY(20px)' },
-    config: { duration: 500 },
+    config: { duration: 800 },
   });
 
   return (
@@ -130,12 +125,12 @@ const App = () => {
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            YouTube Snippet Generator
+            TuneSplitter
           </Typography>
         </Toolbar>
       </AppBar>
       <Box className="side-by-side-content">
-        <animated.div style={{ ...textFieldProps, ...widthProps}}>
+        <animated.div style={{ ...textFieldProps, ...widthProps }}>
           <Box
             sx={{
               margin: 'auto',
@@ -144,6 +139,8 @@ const App = () => {
               alignItems: 'center',
               paddingLeft: isValidUrl ? 25 : 0,
               paddingRight: 0,
+              mt: 7,
+              maxWidth: '1000px',
               transition: 'all 0.5s ease-in-out',
             }}
           >
@@ -159,11 +156,8 @@ const App = () => {
               item ? (
                 <animated.div style={style}>
                   <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-                    <Button variant="contained" color="primary" onClick={processVideo} disabled={processing || !isValidUrl}>
-                      {processing ? <CircularProgress size={24} /> : 'Generate Snippets'}
-                    </Button>
-                    <Button variant="contained" color="secondary" onClick={fetchSnippets} disabled={processing || !isValidUrl}>
-                      {processing ? <CircularProgress size={24} /> : 'Fetch Snippets'}
+                    <Button variant="contained" color="primary" onClick={processAndFetchSnippets} disabled={processing || !isValidUrl}>
+                      {processing ? <CircularProgress size={24} /> : 'Generate and Fetch Snippets'}
                     </Button>
                     <Button variant="contained" onClick={downloadAll} disabled={snippets.length === 0}>
                       Download All
