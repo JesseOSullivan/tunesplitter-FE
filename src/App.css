@@ -1,3 +1,5 @@
+/* App.css */
+
 .centered-content {
   display: flex;
   flex-direction: column;
@@ -7,9 +9,11 @@
 
 .side-by-side-content {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
   transition: all 0.5s ease-in-out;
+  margin-top: 20px;
 }
 
 .box-transition {

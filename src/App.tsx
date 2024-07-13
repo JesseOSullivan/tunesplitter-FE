@@ -15,10 +15,9 @@ import {
   CssBaseline,
   Card,
   CardContent,
-  Grid
 } from '@mui/material';
 import AudiotrackIcon from '@mui/icons-material/Audiotrack';
-import { CSSTransition } from 'react-transition-group';
+import { useSpring, useTransition, animated } from '@react-spring/web';
 import './App.css'; // Import the CSS file
 
 const App = () => {
@@ -55,7 +54,6 @@ const App = () => {
         headers: { 'Content-Type': 'application/json' }
       });
       setSnippets(response.data.snippets);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error fetching snippets:', error);
       if (error.response) {
@@ -108,6 +106,24 @@ const App = () => {
   const videoId = extractVideoId(videoUrl);
   const iframeUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
 
+  const textFieldProps = useSpring({
+    width: isValidUrl ? '40%' : '100%',
+    transform: isValidUrl ? 'translateX(-20%)' : 'translateX(0%)',
+    config: { duration: 1000 }, // Adjust the duration to make the animation slower
+  });
+
+  const widthProps = useSpring({
+    width: isValidUrl ? '40%' : '100%',
+    config: { duration: 1500 }, // Adjust the duration to make the width change slower
+  });
+
+  const buttonTransitions = useTransition(isValidUrl, {
+    from: { opacity: 0, transform: 'translateY(20px)' },
+    enter: { opacity: 1, transform: 'translateY(0px)' },
+    leave: { opacity: 0, transform: 'translateY(20px)' },
+    config: { duration: 500 },
+  });
+
   return (
     <div>
       <CssBaseline />
@@ -118,67 +134,52 @@ const App = () => {
           </Typography>
         </Toolbar>
       </AppBar>
-      <Box
-        sx={{
-          mt: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          maxWidth: 'md',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          paddingLeft: 2,
-          paddingRight: 2,
-          transition: 'all 0.5s ease-in-out',
-          transform: isValidUrl ? 'translateX(-20%)' : 'translateX(0)',
-          // change size and suff based on isValidUrl
-          width: isValidUrl ? '40%' : '100%',
-        }}
-      >
-        <TextField
-          fullWidth
-          label="Enter YouTube video URL"
-          variant="outlined"
-          value={videoUrl}
-          onChange={handleInputChange}
-          sx={{ mb: 2 }}
-        />
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <Button variant="contained" color="primary" onClick={processVideo} disabled={processing || !isValidUrl}>
-            {processing ? <CircularProgress size={24} /> : 'Generate Snippets'}
-          </Button>
-          <Button variant="contained" color="secondary" onClick={fetchSnippets} disabled={processing || !isValidUrl}>
-            {processing ? <CircularProgress size={24} /> : 'Fetch Snippets'}
-          </Button>
-          <Button variant="contained" onClick={downloadAll} disabled={snippets.length === 0}>
-            Download All
-          </Button>
-        </Box>
-      </Box>
-      <Box
-        sx={{
-          mt: 4,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          width: '100%',
-          maxWidth: 'md',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          paddingLeft: 2,
-          paddingRight: 2,
-          transition: 'all 0.5s ease-in-out',
-          opacity: isValidUrl ? 1 : 0,
-          maxHeight: isValidUrl ? '1000px' : '0',
-          overflow: 'hidden',
-        }}
-      >
+      <Box className="side-by-side-content">
+        <animated.div style={{ ...textFieldProps, ...widthProps}}>
+          <Box
+            sx={{
+              margin: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              paddingLeft: isValidUrl ? 25 : 0,
+              paddingRight: 0,
+              transition: 'all 0.5s ease-in-out',
+            }}
+          >
+            <TextField
+              fullWidth
+              label="Enter YouTube video URL"
+              variant="outlined"
+              value={videoUrl}
+              onChange={handleInputChange}
+              sx={{ mb: 2 }}
+            />
+            {buttonTransitions((style, item) =>
+              item ? (
+                <animated.div style={style}>
+                  <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <Button variant="contained" color="primary" onClick={processVideo} disabled={processing || !isValidUrl}>
+                      {processing ? <CircularProgress size={24} /> : 'Generate Snippets'}
+                    </Button>
+                    <Button variant="contained" color="secondary" onClick={fetchSnippets} disabled={processing || !isValidUrl}>
+                      {processing ? <CircularProgress size={24} /> : 'Fetch Snippets'}
+                    </Button>
+                    <Button variant="contained" onClick={downloadAll} disabled={snippets.length === 0}>
+                      Download All
+                    </Button>
+                  </Box>
+                </animated.div>
+              ) : null
+            )}
+          </Box>
+        </animated.div>
         {iframeUrl && (
-          <Card sx={{ mb: 2, width: '100%' }}>
+          <Card sx={{ mt: 0, flex: 1 }}>
             <CardContent>
               <iframe
                 width="100%"
-                height="315"
+                height="415"
                 src={iframeUrl}
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
