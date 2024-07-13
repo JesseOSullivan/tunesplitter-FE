@@ -4,7 +4,6 @@ import {
   TextField,
   Button,
   CircularProgress,
-  List,
   ListItem,
   ListItemText,
   ListItemIcon,
@@ -50,12 +49,12 @@ const App = () => {
     setProcessing(true);
     setLoadingSnippets(true);
     try {
-      await axios.get(`http://localhost:3001/process-video`, {
+      await axios.get(`http://3.106.230.195:3001/process-video`, {
         params: { url: videoUrl },
         headers: { 'Content-Type': 'application/json' },
       });
 
-      const response = await axios.get(`http://localhost:3001/get-snippets`, {
+      const response = await axios.get(`http://3.106.230.195:3001/get-snippets`, {
         params: { url: videoUrl },
         headers: { 'Content-Type': 'application/json' },
       });
@@ -73,7 +72,7 @@ const App = () => {
   const downloadAll = async () => {
     setDownloading(true);
     try {
-      const response = await axios.get(`http://localhost:3001/download-all`, {
+      const response = await axios.get(`http://3.106.230.195:3001/download-all`, {
         params: { url: videoUrl },
         responseType: 'blob',
       });
