@@ -4,6 +4,7 @@ import {
   TextField,
   Button,
   CircularProgress,
+  List,
   ListItem,
   ListItemText,
   ListItemIcon,
@@ -49,15 +50,11 @@ const App = () => {
     setProcessing(true);
     setLoadingSnippets(true);
     try {
-      await axios.get(`http://3.106.230.195:3001/process-video`, {
+      const response = await axios.get(`http://ec2-3-106-230-195.ap-southeast-2.compute.amazonaws.com:3001/process-and-fetch-snippets`, {
         params: { url: videoUrl },
         headers: { 'Content-Type': 'application/json' },
       });
 
-      const response = await axios.get(`http://3.106.230.195:3001/get-snippets`, {
-        params: { url: videoUrl },
-        headers: { 'Content-Type': 'application/json' },
-      });
       setSnippets(response.data.snippets);
       setHasFetched(true);
       setProcessing(false);
@@ -72,10 +69,14 @@ const App = () => {
   const downloadAll = async () => {
     setDownloading(true);
     try {
-      const response = await axios.get(`http://3.106.230.195:3001/download-all`, {
-        params: { url: videoUrl },
-        responseType: 'blob',
-      });
+      const response = await axios.post(
+        'http://ec2-3-106-230-195.ap-southeast-2.compute.amazonaws.com:3001/download-all',
+        { snippets }, // Sending the snippets array in the request body
+        {
+          responseType: 'blob',
+          headers: { 'Content-Type': 'application/json' }, // Ensuring proper content type
+        }
+      );
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -88,7 +89,7 @@ const App = () => {
     }
     setDownloading(false);
   };
-
+  
   const extractVideoId = (url: string) => {
     try {
       const urlObj = new URL(url);
