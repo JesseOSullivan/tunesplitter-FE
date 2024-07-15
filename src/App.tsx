@@ -40,6 +40,35 @@ const App = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
 
+  const extractVideoId = (url: string) => {
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.hostname.toLowerCase().includes('youtu.be')) {
+        // Directly return the pathname which is the video ID for youtu.be links
+        return urlObj.pathname.substring(1).split('?')[0]; // Skip the first slash and remove any query parameters
+      } else if (urlObj.hostname.toLowerCase().includes('youtube.com') && urlObj.pathname.toLowerCase().includes('/watch')) {
+        // For regular YouTube URLs, the video ID is under the 'v' parameter
+        return urlObj.searchParams.get('v');
+      } else if (urlObj.hostname.toLowerCase().includes('m.youtube.com') && urlObj.pathname.toLowerCase().includes('/watch')) {
+        // For mobile YouTube URLs, the video ID is under the 'v' parameter
+        return urlObj.searchParams.get('v');
+      }
+      return null;
+    } catch (error) {
+      console.error('Invalid URL:', error);
+      return null;
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setVideoUrl(url);
+    const videoId = extractVideoId(url);
+    setIsValidUrl(!!videoId);
+    setHasFetched(false);
+    setSnippets([]);
+  };
+
   const processAndFetchSnippets = async () => {
     if (hasFetched) {
       alert('Snippets have already been fetched.');
@@ -48,9 +77,14 @@ const App = () => {
 
     setProcessing(true);
     setLoadingSnippets(true);
+    const videoId = extractVideoId(videoUrl);
+    const cleanUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+    console.log(`Processing URL: ${cleanUrl}`);
+
     try {
       const response = await axios.get(`http://ec2-3-106-230-195.ap-southeast-2.compute.amazonaws.com:3001/process-and-fetch-snippets`, {
-        params: { url: videoUrl },
+        params: { url: cleanUrl },
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -88,41 +122,7 @@ const App = () => {
     }
     setDownloading(false);
   };
-  
-  const extractVideoId = (url: string) => {
-    try {
-      const urlObj = new URL(url);
-      return urlObj.searchParams.get('v');
-    } catch (error) {
-      console.error('Invalid URL:', error);
-      return null;
-    }
-  };
 
-  const isValidYouTubeUrl = (url: string): boolean => {
-    try {
-      const urlObj = new URL(url);
-      const host = urlObj.hostname.toLowerCase();
-      const validHosts = ['www.youtube.com', 'youtube.com', 'youtu.be'];
-      const videoIdParam = urlObj.searchParams.get('v');
-      let videoIdPath = urlObj.pathname && urlObj.pathname.split('/')[1];
-  
-      // Check if the video ID from URL parameters or pathname is valid (not null or undefined)
-      const isValidVideoId = videoIdParam || (videoIdPath && videoIdPath !== '');
-      return validHosts.includes(host) && !!isValidVideoId;
-    } catch (error) {
-      console.error('Invalid URL:', error);
-      return false;
-    }
-  };
-    const handleInputChange = (e: { target: { value: any; }; }) => {
-    const url : any = e.target.value;
-    setVideoUrl(url);
-    setIsValidUrl(isValidYouTubeUrl(url));
-    setHasFetched(false);
-    setSnippets([]);
-  };
-  
   const videoId = extractVideoId(videoUrl);
   const iframeUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
 
@@ -150,7 +150,7 @@ const App = () => {
       <AppBar position="static" sx={{ height: 80 }}>
         <Toolbar sx={{ minHeight: 80 }}>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <img src={mascot} alt="Mascot" style={{ width: '70px', height: '70px', marginRight: '20px', marginTop:7 }} />
+            <img src={mascot} alt="Mascot" style={{ width: '70px', height: '70px', marginRight: '20px', marginTop: 7 }} />
             <Typography variant="h4" component="div" sx={{ flexGrow: 1 }}>
               TuneSplitter
             </Typography>
