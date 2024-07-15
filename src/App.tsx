@@ -99,15 +99,30 @@ const App = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const url = e.target.value;
+  const isValidYouTubeUrl = (url: string): boolean => {
+    try {
+      const urlObj = new URL(url);
+      const host = urlObj.hostname.toLowerCase();
+      const validHosts = ['www.youtube.com', 'youtube.com', 'youtu.be'];
+      const videoIdParam = urlObj.searchParams.get('v');
+      let videoIdPath = urlObj.pathname && urlObj.pathname.split('/')[1];
+  
+      // Check if the video ID from URL parameters or pathname is valid (not null or undefined)
+      const isValidVideoId = videoIdParam || (videoIdPath && videoIdPath !== '');
+      return validHosts.includes(host) && !!isValidVideoId;
+    } catch (error) {
+      console.error('Invalid URL:', error);
+      return false;
+    }
+  };
+    const handleInputChange = (e: { target: { value: any; }; }) => {
+    const url : any = e.target.value;
     setVideoUrl(url);
-    const videoId = extractVideoId(url);
-    setIsValidUrl(!!videoId);
+    setIsValidUrl(isValidYouTubeUrl(url));
     setHasFetched(false);
     setSnippets([]);
   };
-
+  
   const videoId = extractVideoId(videoUrl);
   const iframeUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
 
